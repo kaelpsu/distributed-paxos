@@ -1,12 +1,11 @@
 package ufrn.kael.distributedPaxos.common.serialization;
 
-import ufrn.kael.distributedPaxos.common.dto.Command;
-import ufrn.kael.distributedPaxos.common.message.Message;
-import ufrn.kael.distributedPaxos.common.message.MessageType;
-import ufrn.kael.distributedPaxos.common.message.NodeId;
-
 import org.junit.jupiter.api.Test;
-import java.nio.charset.StandardCharsets;
+import ufrn.kael.distributedPaxos.common.message.Message;
+import ufrn.kael.distributedPaxos.common.message.PaxosCommand;
+import ufrn.kael.distributedPaxos.common.message.SystemCommand;
+import ufrn.kael.distributedPaxos.paxos.actors.ProposalId;
+
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,64 +15,52 @@ class JsonSerializerTest {
     private final JsonSerializer serializer = new JsonSerializer();
 
     @Test
-    void deveSerializarEDesserializarMensagem() {
+    void shouldSerializeandDeserializePrepare() {
 
-        NodeId sender = new NodeId("business-1");
-        NodeId receiver = new NodeId("db-1");
-
-        Command command = new Command(
-                "SET",
-                Map.of(
-                        "key", "account:10",
-                        "value", "500"
-                )
-        );
-
-        Message<Command> original = Message.create(
-                sender,
-                receiver,
-                MessageType.COMMAND,
-                command
-        );
+        PaxosCommand.Prepare original =
+                new PaxosCommand.Prepare(
+                        "msg-1",
+                        "db-1",
+                        "db-2",
+                        new ProposalId(10, "db-1")
+                );
 
         byte[] data = serializer.serialize(original);
 
-        assertNotNull(data);
-        assertTrue(data.length > 0);
+        Message restored = serializer.deserialize(data);
 
-        Message<Command> restored = serializer.deserialize(data, Command.class);
+        assertInstanceOf(PaxosCommand.Prepare.class, restored);
 
-        assertEquals(original.id(), restored.id());
-        assertEquals(original.sender(), restored.sender());
-        assertEquals(original.receiver(), restored.receiver());
-        assertEquals(original.type(), restored.type());
-        assertEquals(original.payload(), restored.payload());
+        assertEquals(original, restored);
     }
 
     @Test
-    void serializacaoDeveProduzirJson() {
+    void shouldSerializeandDeserializeAccept() {
 
-        Command command = new Command(
-                "SET",
-                Map.of("key", "x")
-        );
+        SystemCommand command =
+                new SystemCommand(
+                        "SET",
+                        Map.of(
+                                "key", "account:10",
+                                "value", "500"
+                        )
+                );
 
-        Message<Command> message = Message.create(
-                new NodeId("business-1"),
-                new NodeId("db-1"),
-                MessageType.COMMAND,
-                command
-        );
+        PaxosCommand.Accept original =
+                new PaxosCommand.Accept(
+                        "msg-2",
+                        "db-1",
+                        "db-2",
+                        new ProposalId(10, "db-1"),
+                        command
+                );
 
-        byte[] data = serializer.serialize(message);
+        byte[] data = serializer.serialize(original);
 
-        String json = new String(
-                data,
-                StandardCharsets.UTF_8
-        );
+        Message restored = serializer.deserialize(data);
 
-        assertTrue(json.startsWith("{"));
-        assertTrue(json.contains("\"type\":\"COMMAND\""));
-        assertTrue(json.contains("\"operation\":\"SET\""));
+        assertInstanceOf(PaxosCommand.Accept.class, restored);
+
+        assertEquals(original, restored);
     }
 }

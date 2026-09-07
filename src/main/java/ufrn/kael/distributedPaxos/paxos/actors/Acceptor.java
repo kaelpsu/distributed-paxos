@@ -1,33 +1,45 @@
 package ufrn.kael.distributedPaxos.paxos.actors;
 
-import ufrn.kael.distributedPaxos.paxos.messages.Accept;
-import ufrn.kael.distributedPaxos.paxos.messages.Accepted;
-import ufrn.kael.distributedPaxos.paxos.messages.Prepare;
-import ufrn.kael.distributedPaxos.paxos.messages.Promise;
-import ufrn.kael.distributedPaxos.paxos.messages.ProposalId;
+import ufrn.kael.distributedPaxos.common.message.PaxosCommand;
+import ufrn.kael.distributedPaxos.common.message.SystemCommand;
 
-public class Acceptor<T> {
+public class Acceptor {
     private ProposalId promisedId;
     private ProposalId acceptedProposalId;
-    private T acceptedValue;
+    private SystemCommand acceptedValue;
 
-    public Promise<T> receivePrepare(Prepare prepare) {
+    public PaxosCommand.Promise receivePrepare(PaxosCommand.Prepare prepare) {
         ProposalId proposalId = prepare.proposalId();
         if (promisedId == null || proposalId.compareTo(promisedId) > 0) {
             promisedId = proposalId;
-            return new Promise<>(proposalId, acceptedProposalId, acceptedValue);
-        } 
+            return new PaxosCommand.Promise(
+                    PaxosCommand.generateId(),
+                    prepare.targetId(),
+                    prepare.senderId(),
+                    proposalId,
+                    acceptedProposalId,
+                    acceptedValue
+            );
+        }
         
         return null;
     }
 
-    public Accepted<T> receiveAccept(Accept<T> accept) {
+    public PaxosCommand.Accepted receiveAccept(PaxosCommand.Accept accept) {
         ProposalId proposalId = accept.proposalId();
-        T value = accept.value();
-        if (promisedId != null && proposalId.compareTo(promisedId) == 0) {
+        
+        if (promisedId == null || proposalId.compareTo(promisedId) >= 0) {
+            promisedId = proposalId;
             acceptedProposalId = proposalId;
-            acceptedValue = value;
-            return new Accepted<>(proposalId, value);
+            acceptedValue = accept.value();
+
+            return new PaxosCommand.Accepted(
+                    PaxosCommand.generateId(),
+                    accept.targetId(),
+                    accept.senderId(),
+                    proposalId,
+                    acceptedValue
+            );
         }
         return null;
     }

@@ -1,23 +1,23 @@
-package ufrn.kael.distributedPaxos.common.dto;
+package ufrn.kael.distributedPaxos.common.message;
 
 import java.util.Map;
-import java.util.Objects;
 
-public record Command(
+public record SystemCommand(
         String operation,
         Map<String, String> parameters
 ) {
 
-    public Command {
+    public SystemCommand {
         if (operation == null || operation.isBlank()) {
             throw new IllegalArgumentException(
                     "Operation cannot be null or blank."
             );
         }
 
-        Objects.requireNonNull(
-                parameters,
-                "Parameters cannot be null."
-        );
+        if (parameters == null) {
+            throw new IllegalArgumentException(
+                    "Parameters cannot be null."
+            );
+        }
     }
 }

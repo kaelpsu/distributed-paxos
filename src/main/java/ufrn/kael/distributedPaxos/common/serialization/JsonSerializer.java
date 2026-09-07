@@ -12,14 +12,11 @@ public class JsonSerializer implements Serializer {
         this.mapper = JsonMapper.builder().findAndAddModules().build();
     }
 
-    public byte[] serialize(Message<?> message) {
+    public byte[] serialize(Message message) {
         return mapper.writeValueAsBytes(message);
     }
 
-    public <T> Message<T> deserialize(byte[] data, Class<T> payloadType) {
-        return mapper.readValue(
-            data, mapper.getTypeFactory()
-            .constructParametricType(Message.class, payloadType));
+    public Message deserialize(byte[] data) {
+        return mapper.readValue(data, Message.class);
     }
-    
 }

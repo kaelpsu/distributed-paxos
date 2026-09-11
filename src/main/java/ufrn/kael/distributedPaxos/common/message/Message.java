@@ -38,6 +38,10 @@ import ufrn.kael.distributedPaxos.common.message.PaxosCommand.*;
         @JsonSubTypes.Type(
                 value = ApplicationResponse.class,
                 name = "RESPONSE"
+        ),
+        @JsonSubTypes.Type(
+                value = Heartbeat.class,
+                name = "HEARTBEAT"
         )
 })
 public interface Message {

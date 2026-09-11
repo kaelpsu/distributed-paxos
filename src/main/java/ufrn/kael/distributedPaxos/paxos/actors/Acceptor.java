@@ -4,9 +4,14 @@ import ufrn.kael.distributedPaxos.common.message.PaxosCommand;
 import ufrn.kael.distributedPaxos.common.message.Transaction;
 
 public class Acceptor {
+    private final String nodeId;
     private ProposalId promisedId;
     private ProposalId acceptedProposalId;
     private Transaction acceptedValue;
+
+    public Acceptor(String nodeId) {
+        this.nodeId = nodeId;
+    }
 
     public PaxosCommand.Promise receivePrepare(PaxosCommand.Prepare prepare) {
         ProposalId proposalId = prepare.proposalId();
@@ -14,7 +19,7 @@ public class Acceptor {
             promisedId = proposalId;
             return new PaxosCommand.Promise(
                     PaxosCommand.generateId(),
-                    prepare.targetId(),
+                    this.nodeId,
                     prepare.senderId(),
                     proposalId,
                     acceptedProposalId,
@@ -35,8 +40,8 @@ public class Acceptor {
 
             return new PaxosCommand.Accepted(
                     PaxosCommand.generateId(),
-                    accept.targetId(),
-                    accept.senderId(),
+                    this.nodeId,
+                    "*",
                     proposalId,
                     acceptedValue
             );

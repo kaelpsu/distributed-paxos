@@ -30,7 +30,15 @@ import ufrn.kael.distributedPaxos.common.message.PaxosCommand.*;
         // @JsonSubTypes.Type(
         //         value = Reject.class,
         //         name = "REJECT"
-        // )
+        // ),
+        @JsonSubTypes.Type(
+                value = ApplicationCommand.class,
+                name = "COMMAND"
+        ),
+        @JsonSubTypes.Type(
+                value = ApplicationResponse.class,
+                name = "RESPONSE"
+        )
 })
 public interface Message {
 

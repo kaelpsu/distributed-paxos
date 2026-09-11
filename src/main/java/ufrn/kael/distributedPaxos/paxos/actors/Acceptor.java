@@ -1,12 +1,12 @@
 package ufrn.kael.distributedPaxos.paxos.actors;
 
 import ufrn.kael.distributedPaxos.common.message.PaxosCommand;
-import ufrn.kael.distributedPaxos.common.message.SystemCommand;
+import ufrn.kael.distributedPaxos.common.message.Transaction;
 
 public class Acceptor {
     private ProposalId promisedId;
     private ProposalId acceptedProposalId;
-    private SystemCommand acceptedValue;
+    private Transaction acceptedValue;
 
     public PaxosCommand.Promise receivePrepare(PaxosCommand.Prepare prepare) {
         ProposalId proposalId = prepare.proposalId();

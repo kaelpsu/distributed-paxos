@@ -2,12 +2,12 @@ package ufrn.kael.distributedPaxos.common.message;
 
 import java.util.Map;
 
-public record SystemCommand(
+public record Transaction(
         String operation,
         Map<String, String> parameters
 ) {
 
-    public SystemCommand {
+    public Transaction {
         if (operation == null || operation.isBlank()) {
             throw new IllegalArgumentException(
                     "Operation cannot be null or blank."

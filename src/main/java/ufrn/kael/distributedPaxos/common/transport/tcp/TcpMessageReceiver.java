@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -93,9 +94,15 @@ public class TcpMessageReceiver implements MessageReceiver {
     }
 
     private void processAsTcp(BufferedInputStream in, OutputStream out, String clientAddress) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+        String json = reader.readLine(); // gambiarra to use \n as eol marker
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+
         System.out.println("[TCP-MODE] Deserializing with Jackson...: " + clientAddress);
         
-        Message message = serializer.deserialize(in);
+        Message message = serializer.deserialize(bais);
 
         System.out.println("[TCP-MODE-" + port + "] Success! Message converted to: " + message.getClass().getSimpleName());
         

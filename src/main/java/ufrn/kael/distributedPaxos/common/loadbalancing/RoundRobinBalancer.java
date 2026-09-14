@@ -1,4 +1,4 @@
-package ufrn.kael.distributedPaxos.common.routing;
+package ufrn.kael.distributedPaxos.common.loadbalancing;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;

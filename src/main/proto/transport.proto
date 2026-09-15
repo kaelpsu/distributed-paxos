@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package ufrn.kael.distributedPaxos.grpc;
+
+option java_multiple_files = true;
+option java_package = "ufrn.kael.distributedPaxos.common.transport.grpc.generated";
+
+message TransactionProto {
+  string operation = 1;
+  map<string, string> parameters = 2;
+}
+
+message ApplicationCommandProto {
+  string messageId = 1;
+  string senderId = 2;
+  string targetId = 3;
+  string originId = 4;
+  TransactionProto transaction = 5;
+}
+
+message ApplicationResponseProto {
+  string messageId = 1;
+  string senderId = 2;
+  string targetId = 3;
+  string originId = 4;
+  bool success = 5;
+  string message = 6;
+}
+
+message ProposalIdProto {
+  uint64 number = 1;
+  string nodeId = 2;
+}
+
+message PrepareProto {
+  string messageId = 1;
+  string senderId = 2;
+  string targetId = 3;
+  ProposalIdProto proposalId = 4;
+}
+
+message PromiseProto {
+  string messageId = 1;
+  string senderId = 2;
+  string targetId = 3;
+  ProposalIdProto proposalId = 4;
+  ProposalIdProto highestAcceptedId = 5;
+  TransactionProto acceptedValue = 6;
+}
+
+message AcceptProto {
+  string messageId = 1;
+  string senderId = 2;
+  string targetId = 3;
+  ProposalIdProto proposalId = 4;
+  TransactionProto value = 5;
+}
+
+message AcceptedProto {
+  string messageId = 1;
+  string senderId = 2;
+  string targetId = 3;
+  ProposalIdProto proposalId = 4;
+  TransactionProto value = 5;
+}
+
+
+message GrpcMessage {
+  oneof payload {
+    ApplicationCommandProto command = 1;
+    ApplicationResponseProto response = 2;
+    PrepareProto prepare = 3;
+    PromiseProto promise = 4;
+    AcceptProto accept = 5;
+    AcceptedProto accepted = 6;
+  }
+}
+
+service TransportService {
+  rpc TransmitMessage (GrpcMessage) returns (GrpcMessage);
+}

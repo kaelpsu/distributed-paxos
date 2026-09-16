@@ -27,27 +27,27 @@ public class InteractiveClient {
 
     private static final String HOST = "localhost";
     private static final int TCP_PORT = 8080;
-    private static final int UDP_PORT = 8090;
-    private static final int GRPC_PORT = 8110;
+    private static final int UDP_PORT = 9090;
+    private static final int GRPC_PORT = 50051;
 
     public static void main(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
-            System.out.println("=== CLIENTE MULTIPROTOCOLO PAXOS ===");
+            System.out.println("=== MULTIPROTOCOL PAXOS CLIENT ===");
 
             while (true) {
             
-                System.out.println("Escolha a via de comunicação:");
+                System.out.println("Choose the communication protocol:");
                 System.out.println("1. TCP");
                 System.out.println("2. UDP");
                 System.out.println("3. HTTP");
                 System.out.println("4. GRPC");
-                System.out.print("Sua escolha (1/2/3/4): ");
+                System.out.print("Your choice (1/2/3/4): ");
                 int choice = Integer.parseInt(scanner.nextLine());
 
-                System.out.print("Digite a chave para salvar no banco: ");
+                System.out.print("Type the key to be saved: ");
                 String key = scanner.nextLine();
 
-                System.out.print("Digite o valor: ");
+                System.out.print("Type the value: ");
                 String value = scanner.nextLine();
 
                 String messageId = "req-" + UUID.randomUUID().toString().substring(0, 8);
@@ -57,7 +57,7 @@ public class InteractiveClient {
                 {"type":"COMMAND","messageId":"%s","senderId":"INTERACTIVE-CLIENT","targetId":"gateway-1","originId":"INTERACTIVE-CLIENT","transaction":{"operation":"SET","parameters":{"key":"%s","value":"%s"}}}
                 """.formatted(messageId, key, value);
 
-                System.out.println("\n[Enviando requisição... Aguarde o consenso distribuído]");
+                System.out.println("\n[Sending request... Wait for consensus]");
                 long startTime = System.currentTimeMillis();
 
                 try {
@@ -66,14 +66,14 @@ public class InteractiveClient {
                         case 2 -> sendUdp(jsonPayload);
                         case 3 -> sendHttp(jsonPayload);
                         case 4 -> sendGrpc(jsonPayload);
-                        default -> System.err.println("Opção inválida.");
+                        default -> System.err.println("Invalid option.");
                     }
                 } catch (Exception e) {
-                    System.err.println("Falha na comunicação: " + e.getMessage());
+                    System.err.println("Communication failed: " + e.getMessage());
                 }
 
                 long elapsedTime = System.currentTimeMillis() - startTime;
-                System.out.println("\nTempo total (ida, consenso Paxos e volta): " + elapsedTime + "ms");
+                System.out.println("\nTotal elapsed time: " + elapsedTime + "ms");
             }
         } catch (NumberFormatException e) {
             e.printStackTrace();
@@ -89,7 +89,7 @@ public class InteractiveClient {
             InputStream in = socket.getInputStream();
             String response = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             
-            System.out.println("=== RESPOSTA VIA TCP ===");
+            System.out.println("=== TCP RESPONSE ===");
             System.out.println(response);
         }
     }
@@ -108,10 +108,10 @@ public class InteractiveClient {
             try {
                 socket.receive(receivePacket);
                 String response = new String(receivePacket.getData(), 0, receivePacket.getLength(), StandardCharsets.UTF_8);
-                System.out.println("=== RESPOSTA VIA UDP ===");
+                System.out.println("=== UDP RESPONSE ===");
                 System.out.println(response);
             } catch (SocketTimeoutException e) {
-                System.err.println("Timeout UDP! Pacote possivelmente perdido ou consenso não alcançado.");
+                System.err.println("UDP Timeout! Packet was lost or consensus was not reach.");
             }
         }
     }
@@ -162,6 +162,8 @@ public class InteractiveClient {
         GrpcMessage request = GrpcMapper.toGrpc(message);
 
         var response = stub.withDeadlineAfter(5, TimeUnit.SECONDS).transmitMessage(request);
+
+        System.out.println("=== GRPC RESPONSE ===");
         System.out.println(response);
 
 

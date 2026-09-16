@@ -27,14 +27,11 @@ public class BusinessNode extends Node {
 
     public BusinessNode(
             String nodeId,
-            int basePort,
             List<MessageReceiver> receivers,
-            NetworkRouter router,
-            List<String> databaseNodes
+            NetworkRouter router
     ) {
         super(nodeId, receivers, router);
 
-        this.databaseNodes = databaseNodes;
         this.registry = new TopologyRegistry();
         
         if (databaseNodes == null || databaseNodes.isEmpty()) {
@@ -159,8 +156,7 @@ public class BusinessNode extends Node {
                     java.util.UUID.randomUUID().toString(),
                     this.nodeId,
                     "*",
-                    this.nodeId,
-                    "127.0.0.1" // i'll change this when testing with the real network
+                    this.nodeId
             );
         
             // always sends heartbeat via udp

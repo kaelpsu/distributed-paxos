@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import ufrn.kael.distributedPaxos.common.message.Message;
+import ufrn.kael.distributedPaxos.common.serialization.JsonSerializer;
 import ufrn.kael.distributedPaxos.common.serialization.Serializer;
 import ufrn.kael.distributedPaxos.common.transport.MessageHandler;
 import ufrn.kael.distributedPaxos.common.transport.MessageReceiver;
@@ -29,9 +30,9 @@ public class TcpMessageReceiver implements MessageReceiver {
     private ServerSocket serverSocket;
     private MessageHandler handler;
 
-    public TcpMessageReceiver(int port, Serializer serializer, int threadCount) {
+    public TcpMessageReceiver(int port, int threadCount) {
         this.port = port;
-        this.serializer = serializer;
+        this.serializer = new JsonSerializer();
         this.threadPool = Executors.newFixedThreadPool(threadCount);
     }
 

@@ -1,6 +1,7 @@
 package ufrn.kael.distributedPaxos.common.transport.udp;
 
 import ufrn.kael.distributedPaxos.common.message.Message;
+import ufrn.kael.distributedPaxos.common.serialization.JsonSerializer;
 import ufrn.kael.distributedPaxos.common.serialization.Serializer;
 import ufrn.kael.distributedPaxos.common.transport.MessageHandler;
 import ufrn.kael.distributedPaxos.common.transport.MessageReceiver;
@@ -24,9 +25,9 @@ public class UdpMessageReceiver implements MessageReceiver {
     private DatagramSocket socket;
     private MessageHandler handler;
 
-    public UdpMessageReceiver(int port, Serializer serializer, int threadCount) {
+    public UdpMessageReceiver(int port, int threadCount) {
         this.port = port;
-        this.serializer = serializer;
+        this.serializer = new JsonSerializer();
         this.threadPool = Executors.newFixedThreadPool(threadCount);
     }
 

@@ -4,6 +4,5 @@ public record Heartbeat(
     String messageId,
     String senderId,
     String targetId,
-    String originId,
-    String ipAddress
+    String originId
 ) implements Message {}

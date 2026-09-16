@@ -159,8 +159,7 @@ public class DatabaseNode extends Node {
                     java.util.UUID.randomUUID().toString(),
                     this.nodeId,
                     "*", // target is always the gateway
-                    this.nodeId,
-                    "127.0.0.1" // i'll change this when testing with the real network
+                    this.nodeId
             );
         
             // always sends heartbeat via udp

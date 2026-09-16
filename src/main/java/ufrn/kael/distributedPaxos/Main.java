@@ -1,100 +1,107 @@
 package ufrn.kael.distributedPaxos;
 
-import ufrn.kael.distributedPaxos.stateless.BusinessNode;
-import ufrn.kael.distributedPaxos.common.serialization.JsonSerializer;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import ufrn.kael.distributedPaxos.common.transport.MessageReceiver;
 import ufrn.kael.distributedPaxos.common.transport.MessageSender;
 import ufrn.kael.distributedPaxos.common.transport.NetworkRouter;
 import ufrn.kael.distributedPaxos.common.transport.Protocol;
 import ufrn.kael.distributedPaxos.common.transport.grpc.GrpcMessageReceiver;
 import ufrn.kael.distributedPaxos.common.transport.grpc.GrpcMessageSender;
+import ufrn.kael.distributedPaxos.common.transport.http.HttpMessageSender;
 import ufrn.kael.distributedPaxos.common.transport.tcp.TcpMessageReceiver;
 import ufrn.kael.distributedPaxos.common.transport.tcp.TcpMessageSender;
 import ufrn.kael.distributedPaxos.common.transport.udp.UdpMessageReceiver;
 import ufrn.kael.distributedPaxos.common.transport.udp.UdpMessageSender;
-import ufrn.kael.distributedPaxos.common.transport.http.HttpMessageSender;
 import ufrn.kael.distributedPaxos.gateway.ApiGateway;
 import ufrn.kael.distributedPaxos.stateful.DatabaseNode;
+import ufrn.kael.distributedPaxos.stateless.BusinessNode;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Main {
-    
-    // topology matrices (since we only use localhost for these lcoal tests, each "node" is actually a set of three different ports inside the same ip)
-    private static final Map<String, InetSocketAddress> tcpTopology = new HashMap<>();
-    private static final Map<String, InetSocketAddress> udpTopology = new HashMap<>();
-    private static final Map<String, InetSocketAddress> grpcTopology = new HashMap<>();
+
+    // hard-coded ports
+    private static final int PORT_TCP_HTTP = 8080;
+    private static final int PORT_UDP = 9090;
+    private static final int PORT_GRPC = 50051;
 
     public static void main(String[] args) throws Exception {
-        JsonSerializer serializer = new JsonSerializer();
+        Map<String, String> params = parseArgs(args);
         
-        // (Offsets: TCP = base, UDP = base + 10, GRPC = base + 30)
-        registerNode("gateway-1", 8080);
-        registerNode("biz-1", 8081);
-        registerNode("biz-2", 8082);
-        registerNode("db-1", 9001);
-        registerNode("db-2", 9002);
-        registerNode("db-3", 9003);
+        String nodeType = params.get("--type");
+        String nodeId = params.get("--id");
+        String configFile = params.getOrDefault("--config", "topology.json");
 
-        List<String> databaseNodes = List.of("db-1", "db-2", "db-3");
+        if (nodeType == null || nodeId == null) {
+            System.err.println("Usage: java -jar app.jar --type <gateway|biz|db> --id <node-id> [--config topology.json]");
+            System.exit(1);
+        }
 
-        DatabaseNode db1 = createDbNode("db-1", 9001, serializer);
-        DatabaseNode db2 = createDbNode("db-2", 9002, serializer);
-        DatabaseNode db3 = createDbNode("db-3", 9003, serializer);
+        Map<String, String> ipTopology = loadTopologyIps(configFile);
+        if (!ipTopology.containsKey(nodeId)) {
+            throw new IllegalArgumentException("Node " + nodeId + " not found on the topology!");
+        }
 
-        BusinessNode biz1 = createBizNode("biz-1", 8081, serializer, databaseNodes);
-        BusinessNode biz2 = createBizNode("biz-2", 8082, serializer, databaseNodes);
+        Map<String, InetSocketAddress> tcpTopology = buildAddressMap(ipTopology, PORT_TCP_HTTP);
+        Map<String, InetSocketAddress> udpTopology = buildAddressMap(ipTopology, PORT_UDP);
+        Map<String, InetSocketAddress> grpcTopology = buildAddressMap(ipTopology, PORT_GRPC);
 
-        NetworkRouter gwRouter = createRouter(serializer);
-        List<MessageReceiver> gwReceivers = createReceivers(8080, serializer, 200);
-        ApiGateway gateway = new ApiGateway("gateway-1", gwReceivers, gwRouter);
-
-        // 5. Inicialização
-        db1.start(); db2.start(); db3.start();
-        biz1.start(); biz2.start();
-        gateway.start();
-        
-        System.out.println("Multiprotocol Cluster Multiprotocolo initialized!");
-        System.out.println("Gateway listening on: TCP/HTTP(8080) | UDP(8090) | GRPC(8110)");
-    }
-
-    private static void registerNode(String id, int basePort) {
-        tcpTopology.put(id, new InetSocketAddress("localhost", basePort));
-        udpTopology.put(id, new InetSocketAddress("localhost", basePort + 10));
-        grpcTopology.put(id, new InetSocketAddress("localhost", basePort + 30));
-    }
-
-    private static NetworkRouter createRouter(JsonSerializer serializer) throws Exception {
         Map<Protocol, MessageSender> senders = new HashMap<>();
         senders.put(Protocol.TCP, new TcpMessageSender(tcpTopology));
-        senders.put(Protocol.UDP, new UdpMessageSender(udpTopology));
         senders.put(Protocol.HTTP, new HttpMessageSender(tcpTopology));
+        senders.put(Protocol.UDP, new UdpMessageSender(udpTopology));
         senders.put(Protocol.GRPC, new GrpcMessageSender(grpcTopology));
-        return new NetworkRouter(senders);
-    }
+        
+        NetworkRouter router = new NetworkRouter(senders);
 
-    private static List<MessageReceiver> createReceivers(int basePort, JsonSerializer serializer, int threads) {
-        return List.of(
-            new TcpMessageReceiver(basePort, serializer, threads),
-            new UdpMessageReceiver(basePort + 10, serializer, threads),
-            new GrpcMessageReceiver(basePort + 30)
+        List<MessageReceiver> sharedReceivers = List.of(
+                new TcpMessageReceiver(8080, 50),
+                new UdpMessageReceiver(9090, 50),
+                new GrpcMessageReceiver(50051)
         );
+
+        System.out.println("Iinitializing node [" + nodeId + "] of type [" + nodeType + "]...");
+        System.out.println("Protocols: TCP/HTTP=" + PORT_TCP_HTTP + " | UDP=" + PORT_UDP + " | GRPC=" + PORT_GRPC);
+
+        switch (nodeType.toLowerCase()) {
+            case "gateway":
+                new ApiGateway(nodeId, sharedReceivers, router).start();
+                break;
+            case "biz":
+                new BusinessNode(nodeId, sharedReceivers, router).start();
+                break;
+            case "db":
+                new DatabaseNode(nodeId, sharedReceivers, router, 2).start();
+                break;
+            default:
+                System.err.println("Invalid type. Use: gateway, biz or db.");
+                System.exit(1);
+        }
     }
 
-    private static DatabaseNode createDbNode(String id, int port, JsonSerializer serializer) throws Exception {
-        return new DatabaseNode(id, createReceivers(port, serializer, 50), createRouter(serializer), 2);
+    private static Map<String, String> parseArgs(String[] args) {
+        Map<String, String> params = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length && args[i].startsWith("--")) {
+                params.put(args[i], args[i + 1]);
+            }
+        }
+        return params;
     }
 
-    private static BusinessNode createBizNode(String id, int port, JsonSerializer serializer, List<String> dbNodes) throws Exception {
-        return new BusinessNode(
-                id, 
-                port, // needs to know this for heatbeat
-                createReceivers(port, serializer, 50), 
-                createRouter(serializer), 
-                dbNodes
-        );
+    private static Map<String, String> loadTopologyIps(String path) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(new File(path), new TypeReference<Map<String, String>>() {});
+    }
+
+    private static Map<String, InetSocketAddress> buildAddressMap(Map<String, String> ips, int port) {
+        Map<String, InetSocketAddress> map = new HashMap<>();
+        ips.forEach((id, ip) -> map.put(id, new InetSocketAddress(ip, port)));
+        return map;
     }
 }

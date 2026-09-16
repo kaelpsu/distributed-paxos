@@ -2,6 +2,7 @@ package ufrn.kael.distributedPaxos.stateful;
 
 import ufrn.kael.distributedPaxos.common.message.ApplicationCommand;
 import ufrn.kael.distributedPaxos.common.message.ApplicationResponse;
+import ufrn.kael.distributedPaxos.common.message.Heartbeat;
 import ufrn.kael.distributedPaxos.common.message.Message;
 import ufrn.kael.distributedPaxos.common.message.PaxosCommand;
 import ufrn.kael.distributedPaxos.common.message.Transaction;
@@ -17,8 +18,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class DatabaseNode extends Node {
+
+    private ScheduledExecutorService heartbeatTimer;
 
     private final Map<String, String> pendingRequests = new ConcurrentHashMap<>();
 
@@ -64,8 +70,8 @@ public class DatabaseNode extends Node {
             case PaxosCommand paxosCommand -> paxosEngine.handle(paxosCommand, protocol);
 
             default ->
-                    throw new IllegalArgumentException(
-                            "Unsupported message: "
+                    System.out.println(
+                            "[DB] Unsupported message: "
                                     + message.getClass()
                                     .getSimpleName()
                     );
@@ -131,6 +137,8 @@ public class DatabaseNode extends Node {
             receiver.start();
         }
         System.out.println("[" + nodeId + "] Database Node started.");
+
+        startHeartbeat();
      }
 
     @Override
@@ -138,7 +146,27 @@ public class DatabaseNode extends Node {
         for (MessageReceiver receiver : receivers) {
             receiver.stop();
         }
+        if (heartbeatTimer != null) {
+            heartbeatTimer.shutdownNow();
+        }
         System.out.println("[" + nodeId + "] Database Node stopped.");
+    }
+
+    private void startHeartbeat() {
+        this.heartbeatTimer = Executors.newSingleThreadScheduledExecutor();
+        heartbeatTimer.scheduleAtFixedRate(() -> {
+            Heartbeat hb = new Heartbeat(
+                    java.util.UUID.randomUUID().toString(),
+                    this.nodeId,
+                    "*", // target is always the gateway
+                    this.nodeId,
+                    "127.0.0.1" // i'll change this when testing with the real network
+            );
+        
+            // always sends heartbeat via udp
+            this.router.send(hb, Protocol.UDP); 
+            
+        }, 0, 3, TimeUnit.SECONDS); // beats every 3 seonds
     }
 
     public InMemoryDatabase getDatabase() {

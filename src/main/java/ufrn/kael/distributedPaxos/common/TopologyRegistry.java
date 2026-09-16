@@ -1,4 +1,4 @@
-package ufrn.kael.distributedPaxos.gateway;
+package ufrn.kael.distributedPaxos.common;
 
 import java.util.List;
 import java.util.Map;
@@ -10,7 +10,7 @@ public class TopologyRegistry {
 
     public void registerOrUpdateNode(String nodeId) {
         lastSeen.put(nodeId, System.currentTimeMillis());
-        System.out.println("[REGISTRY] Nó atualizado/registrado: " + nodeId);
+        System.out.println("[REGISTRY] Updated/Registered node: " + nodeId);
     }
 
     public void removeDeadNodes(long timeoutMs) {
@@ -19,15 +19,21 @@ public class TopologyRegistry {
             if (now - entry.getValue() > timeoutMs) {
                 String deadNode = entry.getKey();
                 lastSeen.remove(deadNode);
-                System.err.println("[REGISTRY] Nó declarado MORTO por inatividade: " + deadNode);
+                System.err.println("[REGISTRY] Declared node as DEAD for inactivity: " + deadNode);
             }
         }
     }
 
-    // useful for load balancer
+    // useful methods for load balancer
     public List<String> getActiveBusinessNodes() {
         return lastSeen.keySet().stream()
                 .filter(id -> id.startsWith("biz-"))
+                .toList();
+    }
+
+    public List<String> getActiveDatabaseNodes() {
+        return lastSeen.keySet().stream()
+                .filter(id -> id.startsWith("db-"))
                 .toList();
     }
 }

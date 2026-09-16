@@ -1,6 +1,7 @@
 package ufrn.kael.distributedPaxos.stateless;
 
 import ufrn.kael.distributedPaxos.common.Node;
+import ufrn.kael.distributedPaxos.common.TopologyRegistry;
 import ufrn.kael.distributedPaxos.common.loadbalancing.RoundRobinBalancer;
 import ufrn.kael.distributedPaxos.common.message.ApplicationCommand;
 import ufrn.kael.distributedPaxos.common.message.ApplicationResponse;
@@ -20,9 +21,7 @@ public class BusinessNode extends Node {
     private final RoundRobinBalancer dbLoadBalancer;
     private ScheduledExecutorService heartbeatTimer;
 
-    private final int tcpPort;
-    private final int udpPort;
-    private final int httpPort;
+    private final TopologyRegistry registry; // keeps track of alive nodes (those who sent heartbeat)
 
     List<String> databaseNodes;
 
@@ -36,10 +35,7 @@ public class BusinessNode extends Node {
         super(nodeId, receivers, router);
 
         this.databaseNodes = databaseNodes;
-
-        this.tcpPort = basePort;
-        this.udpPort = basePort + 10;
-        this.httpPort = tcpPort;
+        this.registry = new TopologyRegistry();
         
         if (databaseNodes == null || databaseNodes.isEmpty()) {
             throw new IllegalArgumentException("Business Node requires at least one Database Node to route messages.");
@@ -59,9 +55,10 @@ public class BusinessNode extends Node {
         
             case ApplicationResponse response -> handleApplicationResponse(response, protocol);
             
+            case Heartbeat heartbeat -> handleHeartbeat(heartbeat);
             default ->
                     System.out.println(
-                            "Unsupported message: "
+                            "[BIZ} Unsupported message: "
                                     + message.getClass()
                                     .getSimpleName()
                     );
@@ -80,7 +77,9 @@ public class BusinessNode extends Node {
                 return;
             }
 
-            String targetDbNode = dbLoadBalancer.getNextNode(databaseNodes);
+            List<String> activeNodes = registry.getActiveDatabaseNodes();
+
+            String targetDbNode = dbLoadBalancer.getNextNode(activeNodes);
 
             ApplicationCommand forwardedCommand = new ApplicationCommand(
                     command.messageId(),
@@ -110,6 +109,10 @@ public class BusinessNode extends Node {
         router.send(forwardedResponse, protocol);
     }
 
+    private void handleHeartbeat(Heartbeat heartbeat) {
+        this.registry.registerOrUpdateNode(heartbeat.senderId());
+    }
+
     private void validateTransaction(ApplicationCommand command) {
         if (command.transaction().operation() == null) {
             throw new IllegalArgumentException("Operation is missing.");
@@ -129,6 +132,13 @@ public class BusinessNode extends Node {
         System.out.println("[" + nodeId + "] Business Node started. Routing to DBs: " + dbLoadBalancer);
     
         startHeartbeat();    
+
+        ScheduledExecutorService removerTimer = Executors.newSingleThreadScheduledExecutor();
+
+        removerTimer.scheduleAtFixedRate(() -> {
+            // if a node doesn't send heartbeat after 10 seconds, its considered dead
+            registry.removeDeadNodes(10000); 
+        }, 5, 5, TimeUnit.SECONDS); // checks every 5 sec
     }
 
     @Override
@@ -148,12 +158,9 @@ public class BusinessNode extends Node {
             Heartbeat hb = new Heartbeat(
                     java.util.UUID.randomUUID().toString(),
                     this.nodeId,
-                    "gateway-1", // target is always the gateway
+                    "*",
                     this.nodeId,
-                    "127.0.0.1", // i'll change this when testing with the real network
-                    this.tcpPort, 
-                    this.udpPort,
-                    this.httpPort
+                    "127.0.0.1" // i'll change this when testing with the real network
             );
         
             // always sends heartbeat via udp

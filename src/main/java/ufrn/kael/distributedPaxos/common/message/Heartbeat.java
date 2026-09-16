@@ -5,8 +5,5 @@ public record Heartbeat(
     String senderId,
     String targetId,
     String originId,
-    String ipAddress,
-    int tcpPort,    // we only need these for 
-    int udpPort,    // local testing, since the ports 
-    int httpPort    // will be pre-defined on real networks
+    String ipAddress
 ) implements Message {}

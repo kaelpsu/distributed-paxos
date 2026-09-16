@@ -1,6 +1,7 @@
 package ufrn.kael.distributedPaxos.gateway;
 
 import ufrn.kael.distributedPaxos.common.Node;
+import ufrn.kael.distributedPaxos.common.TopologyRegistry;
 import ufrn.kael.distributedPaxos.common.loadbalancing.RoundRobinBalancer;
 import ufrn.kael.distributedPaxos.common.message.ApplicationCommand;
 import ufrn.kael.distributedPaxos.common.message.ApplicationResponse;
@@ -51,14 +52,14 @@ public class ApiGateway extends Node {
             case ApplicationCommand command -> {
                 return handleApplicationCommand(command, protocol);
             }
-            
+
             case ApplicationResponse response -> handleApplicationResponse(response, protocol);
             
             case Heartbeat heartbeat -> handleHeartbeat(heartbeat);
 
             default ->
                     System.out.println(
-                            "Unsupported message: "
+                            "[Gateway] Unsupported message: "
                                     + message.getClass()
                                     .getSimpleName()
                     );

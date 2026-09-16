@@ -123,13 +123,6 @@ public class PaxosEngine implements MessageHandler {
     private void handleAccepted(PaxosCommand.Accepted accepted, Protocol protocol) {
         learner.receiveAccepted(accepted, protocol);
     }
-    
-    // private void handleReject(
-    //         PaxosCommand.Reject reject,
-    //         Protocol protocol
-    // ) {
-    //     System.err.println("[PAXOS ENGINE] Proposal rejected: " + reject.reason());
-    // }
 
     public boolean hasDecided() {
         return learner.hasDecided();

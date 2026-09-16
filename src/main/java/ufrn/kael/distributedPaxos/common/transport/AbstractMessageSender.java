@@ -28,7 +28,7 @@ public abstract class AbstractMessageSender implements MessageSender {
         InetSocketAddress address = clusterTopology.get(nodeId);
 
         if (address == null) {
-            System.err.println("[SENDER] Ignoring unknown node ID: " + nodeId);
+            // ignores unknown id
             return;
         }
 

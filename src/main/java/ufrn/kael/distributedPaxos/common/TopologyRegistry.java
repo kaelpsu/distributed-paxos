@@ -9,8 +9,10 @@ public class TopologyRegistry {
     private final Map<String, Long> lastSeen = new ConcurrentHashMap<>();
 
     public void registerOrUpdateNode(String nodeId) {
+        if (lastSeen.get(nodeId) == null) {
+            System.out.println("[REGISTRY] Registered node: " + nodeId);
+        }
         lastSeen.put(nodeId, System.currentTimeMillis());
-        System.out.println("[REGISTRY] Updated/Registered node: " + nodeId);
     }
 
     public void removeDeadNodes(long timeoutMs) {

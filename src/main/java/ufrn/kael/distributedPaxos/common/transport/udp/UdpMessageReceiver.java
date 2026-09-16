@@ -60,18 +60,18 @@ public class UdpMessageReceiver implements MessageReceiver {
 
     private void handlePacket(DatagramPacket packet) {
         String clientAddress = packet.getAddress().toString() + ":" + packet.getPort();
-        System.out.println("[UDP-RECEIVER-" + port + "] --- NEW DATAGRAM RECEIVED FROM: " + clientAddress + " ---");
+        // System.out.println("[UDP-RECEIVER-" + port + "] --- NEW DATAGRAM RECEIVED FROM: " + clientAddress + " ---");
 
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
             
-            System.out.println("[UDP-RECEIVER-" + port + "] Deserializing with Jackson...");
+            // System.out.println("[UDP-RECEIVER-" + port + "] Deserializing with Jackson...");
             Message message = serializer.deserialize(bais);
             
-            System.out.println("[UDP-RECEIVER-" + port + "] Success! Message converted to: " + message.getClass().getSimpleName());
+            // System.out.println("[UDP-RECEIVER-" + port + "] Success! Message converted to: " + message.getClass().getSimpleName());
 
             if (handler != null) {
-                System.out.println("[UDP-RECEIVER-" + port + "] Redirecting to business layer...");
+                // System.out.println("[UDP-RECEIVER-" + port + "] Redirecting to business layer...");
                 
                 Message response = handler.handle(message, Protocol.UDP);
 
@@ -89,7 +89,7 @@ public class UdpMessageReceiver implements MessageReceiver {
                     socket.send(responsePacket);
                     System.out.println("[UDP-RECEIVER-" + port + "] Response sent to client with success.");
                 } else {
-                    System.out.println("[UDP-RECEIVER-" + port + "] Handler has returned NULL. Closing current TCP communication.");
+                    // System.out.println("[UDP-RECEIVER-" + port + "] Handler has returned NULL. Closing current UDP communication.");
                 }
             } else {
                 System.err.println("[UDP-RECEIVER-" + port + "] WARNING: No handlers set for this port!");
@@ -99,7 +99,7 @@ public class UdpMessageReceiver implements MessageReceiver {
             e.printStackTrace();
         }
         
-        System.out.println("[UDP-RECEIVER-" + port + "] --- CONNECTION CLOSED: " + clientAddress + " ---\n");
+        // System.out.println("[UDP-RECEIVER-" + port + "] --- CONNECTION CLOSED: " + clientAddress + " ---\n");
     }
 
     @Override

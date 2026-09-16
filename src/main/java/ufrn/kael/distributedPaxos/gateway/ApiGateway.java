@@ -128,8 +128,6 @@ public class ApiGateway extends Node {
     private void handleApplicationResponse(ApplicationResponse response, Protocol protocol) {
         CompletableFuture<ApplicationResponse> future = pendingRequests.remove(response.messageId());
 
-        System.out.println(response);
-
         if (future != null) {
             // indicates that the response arrived, and that the thread can continue
             future.complete(response);

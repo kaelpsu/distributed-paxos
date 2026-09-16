@@ -27,10 +27,6 @@ import ufrn.kael.distributedPaxos.common.message.PaxosCommand.*;
                 value = Accepted.class,
                 name = "ACCEPTED"
         ),
-        // @JsonSubTypes.Type(
-        //         value = Reject.class,
-        //         name = "REJECT"
-        // ),
         @JsonSubTypes.Type(
                 value = ApplicationCommand.class,
                 name = "COMMAND"

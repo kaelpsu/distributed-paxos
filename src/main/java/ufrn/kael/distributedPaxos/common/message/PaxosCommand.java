@@ -13,8 +13,6 @@ public interface PaxosCommand extends Message {
     record Accept(String messageId, String senderId, String targetId, ProposalId proposalId, Transaction value) implements PaxosCommand {}
     
     record Accepted(String messageId, String senderId, String targetId, ProposalId proposalId, Transaction value) implements PaxosCommand {}
-    
-    // record Reject(String messageId, String senderId, String targetId, ProposalId proposalId, String reason) implements PaxosCommand {}
 
     static String generateId() {
         return UUID.randomUUID().toString();

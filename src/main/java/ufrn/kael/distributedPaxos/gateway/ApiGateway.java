@@ -1,7 +1,7 @@
 package ufrn.kael.distributedPaxos.gateway;
 
 import ufrn.kael.distributedPaxos.common.Node;
-import ufrn.kael.distributedPaxos.common.TopologyRegistry;
+import ufrn.kael.distributedPaxos.common.HeartbeatRegistry;
 import ufrn.kael.distributedPaxos.common.loadbalancing.RoundRobinBalancer;
 import ufrn.kael.distributedPaxos.common.message.ApplicationCommand;
 import ufrn.kael.distributedPaxos.common.message.ApplicationResponse;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public class ApiGateway extends Node {
 
     private final RoundRobinBalancer businessLoadBalancer;
-    private final TopologyRegistry registry; // keeps track of alive nodes (those who sent heartbeat)
+    private final HeartbeatRegistry registry; // keeps track of alive nodes (those who sent heartbeat)
 
    // map for locking thread execution until a response is generated
     private final Map<String, CompletableFuture<ApplicationResponse>> pendingRequests = new ConcurrentHashMap<>();
@@ -38,7 +38,7 @@ public class ApiGateway extends Node {
 
         // internally, the gateway only communicates with business nodes
         this.businessLoadBalancer = new RoundRobinBalancer();
-        this.registry = new TopologyRegistry();
+        this.registry = new HeartbeatRegistry();
 
         for (MessageReceiver receiver : this.receivers) {
             receiver.setMessageHandler(this::processMessage);

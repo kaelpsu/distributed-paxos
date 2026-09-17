@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TopologyRegistry {
+public class HeartbeatRegistry {
     
     private final Map<String, Long> lastSeen = new ConcurrentHashMap<>();
 

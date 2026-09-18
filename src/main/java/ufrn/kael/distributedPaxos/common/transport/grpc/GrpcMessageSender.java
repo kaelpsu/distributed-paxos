@@ -30,7 +30,7 @@ public class GrpcMessageSender extends AbstractMessageSender {
 
         TransportServiceStub stub = asyncStubCache.computeIfAbsent(targetKey, k -> {
 
-            ManagedChannel channel = ManagedChannelBuilder.forTarget("ipv4:" + address.getHostString() + ":" + address.getPort()).usePlaintext().build();
+            ManagedChannel channel = ManagedChannelBuilder.forAddress(address.getHostString(), address.getPort()).usePlaintext().build();
             
             channelCache.put(targetKey, channel);
             return TransportServiceGrpc.newStub(channel);

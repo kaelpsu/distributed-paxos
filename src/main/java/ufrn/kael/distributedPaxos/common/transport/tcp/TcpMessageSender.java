@@ -1,5 +1,6 @@
 package ufrn.kael.distributedPaxos.common.transport.tcp;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -18,7 +19,9 @@ public class TcpMessageSender extends AbstractMessageSender {
 
     @Override
     protected void transmit(Message message, InetSocketAddress address) throws Exception {
-        try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
+        try (Socket socket = new Socket()) {
+
+            socket.connect(address, 1500);
             
             Serializer serializer = new JsonSerializer();
 
@@ -28,6 +31,8 @@ public class TcpMessageSender extends AbstractMessageSender {
             out.write(payload);
             out.flush();
             socket.shutdownOutput(); // eof flag so that the serializer knows the message is over
+        } catch (IOException e) {
+            throw new RuntimeException("NETWORK_ERROR: Unreachable target node (" + address.getHostName() + ":" + address.getPort() + ")", e);
         }
     }
 

@@ -40,7 +40,7 @@ public class GrpcMessageSender extends AbstractMessageSender {
 
         // avoids that request get cancelled after origin server thread is finished
         io.grpc.Context.ROOT.run(() -> {
-            stub.withDeadlineAfter(5, TimeUnit.SECONDS).transmitMessage(request, new StreamObserver<GrpcMessage>() {
+            stub.withDeadlineAfter(1500, TimeUnit.MILLISECONDS).transmitMessage(request, new StreamObserver<GrpcMessage>() {
                 @Override
                 public void onNext(GrpcMessage value) {}
 

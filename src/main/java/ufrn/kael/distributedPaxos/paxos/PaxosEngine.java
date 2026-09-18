@@ -60,7 +60,11 @@ public class PaxosEngine implements MessageHandler {
 
         Prepare prepare = proposer.createPrepare();
 
-        router.send(prepare, protocol);
+        try {
+            router.send(prepare, protocol);
+        } catch (RuntimeException e) {
+            System.err.println("[PAXOS ENGINE] Prepare failed: " + e.getMessage());
+        }
     }
 
     private ProposalId nextProposalId() {
@@ -92,7 +96,11 @@ public class PaxosEngine implements MessageHandler {
         Promise promise = acceptor.receivePrepare(prepare);
         
         if (promise != null) {
-            router.send(promise, protocol);
+            try {
+                router.send(promise, protocol);
+            } catch (RuntimeException e) {
+                System.err.println("[PAXOS ENGINE] Promise failed: " + e.getMessage());
+            }
         }
     }
 
@@ -105,7 +113,11 @@ public class PaxosEngine implements MessageHandler {
         Accept accept = proposer.receivePromise(promise);
         
         if (accept != null) {
-            router.send(accept, protocol);
+            try {
+                router.send(accept, protocol);
+            } catch (RuntimeException e) {
+                System.err.println("[PAXOS ENGINE] Accept failed: " + e.getMessage());
+            }
         }
     }
 
@@ -114,7 +126,11 @@ public class PaxosEngine implements MessageHandler {
         Accepted accepted = acceptor.receiveAccept(accept);
 
         if (accepted != null) {
-            router.send(accepted, protocol);
+            try {
+                router.send(accepted, protocol);
+            } catch (RuntimeException e) {
+                System.err.println("[PAXOS ENGINE] Accepted failed: " + e.getMessage());
+            }
         }
     }
 

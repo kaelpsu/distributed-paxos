@@ -47,6 +47,7 @@ public class BusinessNode extends Node {
             case ApplicationResponse response -> handleApplicationResponse(response, protocol);
             
             case Heartbeat heartbeat -> handleHeartbeat(heartbeat);
+
             default ->
                     System.out.println(
                             "[BIZ} Unsupported message: "
@@ -70,6 +71,19 @@ public class BusinessNode extends Node {
 
             List<String> activeNodes = registry.getActiveDatabaseNodes();
 
+            if (activeNodes.isEmpty() || activeNodes.size() < 2) { // 2 is the default quorum size for paxos
+                ApplicationResponse noDbResponse = new ApplicationResponse(
+                        command.messageId(),
+                        this.nodeId,
+                        command.originId(),
+                        command.originId(),
+                        false,
+                        "ROUTING_ERROR: Not enough database nodes are currently alive."
+                );
+                router.send(noDbResponse, protocol);
+                return;
+            }
+
             String targetDbNode = dbLoadBalancer.getNextNode(activeNodes);
 
             ApplicationCommand forwardedCommand = new ApplicationCommand(
@@ -80,7 +94,22 @@ public class BusinessNode extends Node {
                     command.transaction()
             );
 
-            router.send(forwardedCommand, protocol);
+            try {
+                router.send(forwardedCommand, protocol);
+            } catch (RuntimeException e) {
+                System.err.println("[" + nodeId + "] Failed to reach DB: " + e.getMessage());
+                
+                ApplicationResponse connectionError = new ApplicationResponse(
+                        command.messageId(),
+                        this.nodeId,
+                        command.originId(),
+                        command.originId(),
+                        false,
+                        "ROUTING_ERROR: Database unreachable."
+                );
+                // forward error to gateway
+                router.send(connectionError, protocol); 
+            }
 
         } catch (IllegalArgumentException e) {
             System.err.println("[" + nodeId + "] Business validation failed: " + e.getMessage());

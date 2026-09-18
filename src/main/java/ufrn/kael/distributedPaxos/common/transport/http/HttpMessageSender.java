@@ -5,6 +5,7 @@ import ufrn.kael.distributedPaxos.common.serialization.JsonSerializer;
 import ufrn.kael.distributedPaxos.common.serialization.Serializer;
 import ufrn.kael.distributedPaxos.common.transport.AbstractMessageSender;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -18,7 +19,9 @@ public class HttpMessageSender extends AbstractMessageSender {
 
     @Override
     protected void transmit(Message message, InetSocketAddress address) throws Exception {
-        try (Socket socket = new Socket(address.getAddress(), address.getPort())) {
+        try (Socket socket = new Socket()) {
+
+            socket.connect(address, 1500);
             
             Serializer serializer = new JsonSerializer();
 
@@ -35,6 +38,8 @@ public class HttpMessageSender extends AbstractMessageSender {
             out.write(httpHeader.getBytes());
             out.write(payload); // sends json as content
             out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException("NETWORK_ERROR: Unreachable target node (" + address.getHostName() + ":" + address.getPort() + ")", e);
         }
     }
 }

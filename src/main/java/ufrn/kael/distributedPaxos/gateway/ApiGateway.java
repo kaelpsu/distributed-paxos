@@ -99,6 +99,20 @@ public class ApiGateway extends Node {
         }
 
         List<String> activeNodes = registry.getActiveBusinessNodes();
+
+        if (activeNodes.isEmpty()) {
+            System.err.println("THERE ARE NOT AVAILABLE BUSINESS NODES");
+
+            return new ApplicationResponse(
+                    messageId, 
+                    this.nodeId, 
+                    "CLIENT", 
+                    this.nodeId, 
+                    false,
+                    "[ERROR] There are no available business nodes."
+            );
+        }
+
         String targetBusinessNode = businessLoadBalancer.getNextNode(activeNodes);
         
         ApplicationCommand redirectedCommand = new ApplicationCommand(
@@ -114,14 +128,56 @@ public class ApiGateway extends Node {
 
         pendingRequests.put(messageId, future);
 
-        router.send(redirectedCommand, protocol);
+        try {
+            router.send(redirectedCommand, protocol);
+        } catch (RuntimeException e) {
+            System.err.println(e.getMessage());
+
+            pendingRequests.remove(messageId);
+            return new ApplicationResponse(
+                    messageId, 
+                    this.nodeId, 
+                    "CLIENT", 
+                    this.nodeId, 
+                    false,
+                    "[ERROR] Routing failed: " + e.getMessage()
+            );
+        }
 
         try {
             // forcing thread to wait at most 5 seconds for the response and return its value
-            return future.get(1000, TimeUnit.SECONDS);
+            ApplicationResponse response = future.get(1000, TimeUnit.SECONDS);
+
+            if (!response.success() && response.message().startsWith("ROUTING_ERROR")) {
+
+                System.err.println(response.message());
+
+                // instantly closes socket in case of routing errors
+                return new ApplicationResponse(
+                    messageId, 
+                    this.nodeId, 
+                    "CLIENT", 
+                    this.nodeId, 
+                    false,
+                    "[ERROR] Routing failed: " + response.message()
+                );
+            }
+
+            return response;
+
+
         } catch (Exception e) {
+            System.err.println(e.getMessage());
+            
             pendingRequests.remove(messageId);
-            throw new RuntimeException("Transaction failed or timed out during consensus", e);
+            return new ApplicationResponse(
+                messageId, 
+                this.nodeId, 
+                "CLIENT", 
+                this.nodeId, 
+                false,
+                "[ERROR] Transaction failed or timed out during consensus: " + e.getMessage()
+            );
         }
     }
 

@@ -9,7 +9,7 @@ public class RoundRobinBalancer {
 
     public String getNextNode(List<String> activeNodes) {
         if (activeNodes == null || activeNodes.isEmpty()) {
-            throw new IllegalStateException("Service Unavailable: There are no active Business Nodes.");
+            throw new IllegalStateException("[BALANCER] Service Unavailable: There are no active Business Nodes.");
         }
         
         int index = counter.getAndIncrement() % activeNodes.size();

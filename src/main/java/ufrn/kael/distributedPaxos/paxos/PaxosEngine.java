@@ -81,8 +81,6 @@ public class PaxosEngine implements MessageHandler {
 
             case PaxosCommand.Accepted accepted -> handleAccepted(accepted, protocol);
 
-            // case PaxosCommand.Reject reject -> handleReject(reject);
-
             default -> throw new IllegalArgumentException("[PAXOS HANDLER]: Unknown message type: " + message.getClass().getSimpleName());
         }
 

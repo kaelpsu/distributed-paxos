@@ -116,7 +116,7 @@ public class BusinessNode extends Node {
         }
         
         String op = command.transaction().operation().toUpperCase();
-        if (!op.equals("SET") && !op.equals("DELETE") && !op.equals("GET") && !op.equals("SHUTDOWN")) {
+        if (!op.equals("SET") && !op.equals("GET") && !op.equals("SHUTDOWN")) {
             throw new IllegalArgumentException("Invalid business operation: " + op);
         }
     }

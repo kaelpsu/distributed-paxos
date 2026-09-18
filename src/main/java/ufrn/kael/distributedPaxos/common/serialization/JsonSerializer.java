@@ -22,6 +22,7 @@ public class JsonSerializer implements Serializer {
         return mapper.writeValueAsBytes(message);
     }
 
+    // im passing an inputstream here because tcp doesnt use packets
     public Message deserialize(InputStream inputStream) {
         return mapper.readValue(inputStream, Message.class);
     }

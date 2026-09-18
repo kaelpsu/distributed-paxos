@@ -69,6 +69,8 @@ public class DatabaseNode extends Node {
 
             case PaxosCommand paxosCommand -> paxosEngine.handle(paxosCommand, protocol);
 
+            case Heartbeat heartbeat -> { return null; } // ignores incoming heartbeats
+
             default ->
                     System.out.println(
                             "[DB] Unsupported message: "

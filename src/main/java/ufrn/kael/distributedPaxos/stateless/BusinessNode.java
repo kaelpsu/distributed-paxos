@@ -23,8 +23,6 @@ public class BusinessNode extends Node {
 
     private final HeartbeatRegistry registry; // keeps track of alive nodes (those who sent heartbeat)
 
-    List<String> databaseNodes;
-
     public BusinessNode(
             String nodeId,
             List<MessageReceiver> receivers,
@@ -33,10 +31,6 @@ public class BusinessNode extends Node {
         super(nodeId, receivers, router);
 
         this.registry = new HeartbeatRegistry();
-        
-        if (databaseNodes == null || databaseNodes.isEmpty()) {
-            throw new IllegalArgumentException("Business Node requires at least one Database Node to route messages.");
-        }
         
         this.dbLoadBalancer = new RoundRobinBalancer();
 

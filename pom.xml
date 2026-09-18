@@ -170,11 +170,12 @@
                       <createDependencyReducedPom>false</createDependencyReducedPom>
 
                       <transformers>
-                          <transformer implementation=
-                              "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                              <mainClass>ufrn.kael.distributedPaxos.Main</mainClass>
-                          </transformer>
-                      </transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>ufrn.kael.distributedPaxos.Main</mainClass>
+                        </transformer>
+                        <!-- mescla os ServiceLoaders do gRPC -->
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    </transformers>
                   </configuration>
               </execution>
           </executions>

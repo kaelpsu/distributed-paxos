@@ -118,7 +118,7 @@ public class ApiGateway extends Node {
 
         try {
             // forcing thread to wait at most 5 seconds for the response and return its value
-            return future.get(5, TimeUnit.SECONDS);
+            return future.get(1000, TimeUnit.SECONDS);
         } catch (Exception e) {
             pendingRequests.remove(messageId);
             throw new RuntimeException("Transaction failed or timed out during consensus", e);

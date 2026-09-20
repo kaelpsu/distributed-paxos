@@ -68,7 +68,7 @@ public class ApiGateway extends Node {
         return null;
     }
 
-    public ApplicationResponse handleApplicationCommand(ApplicationCommand command, Protocol protocol) {
+    private ApplicationResponse handleApplicationCommand(ApplicationCommand command, Protocol protocol) {
         
         String messageId = UUID.randomUUID().toString();
 
@@ -146,7 +146,7 @@ public class ApiGateway extends Node {
 
         try {
             // forcing thread to wait at most 5 seconds for the response and return its value
-            ApplicationResponse response = future.get(1000, TimeUnit.SECONDS);
+            ApplicationResponse response = future.get(5, TimeUnit.SECONDS);
 
             if (!response.success() && response.message().startsWith("ROUTING_ERROR")) {
 

@@ -78,4 +78,5 @@ message GrpcMessage {
 
 service TransportService {
   rpc TransmitMessage (GrpcMessage) returns (GrpcMessage);
+  rpc StreamMessage (GrpcMessage) returns (stream GrpcMessage);
 }

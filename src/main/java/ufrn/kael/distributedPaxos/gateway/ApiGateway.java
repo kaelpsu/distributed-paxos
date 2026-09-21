@@ -100,6 +100,20 @@ public class ApiGateway extends Node {
 
         List<String> activeNodes = registry.getActiveBusinessNodes();
 
+        if ("GET_ALIVE_NODES".equals(command.transaction().operation())) {
+            
+            String joinedNodes = String.join(",", activeNodes);
+
+            return new ApplicationResponse(
+                    command.messageId(),
+                    this.nodeId,
+                    command.originId(),
+                    command.originId(),
+                    true,
+                    "STREAM_PAYLOAD:" + joinedNodes
+            );
+        }
+
         if (activeNodes.isEmpty()) {
             System.err.println("THERE ARE NOT AVAILABLE BUSINESS NODES");
 

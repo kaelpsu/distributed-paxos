@@ -5,6 +5,7 @@ import java.io.IOException;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import ufrn.kael.distributedPaxos.common.message.ApplicationResponse;
 import ufrn.kael.distributedPaxos.common.message.Message;
 import ufrn.kael.distributedPaxos.common.transport.MessageHandler;
 import ufrn.kael.distributedPaxos.common.transport.MessageReceiver;
@@ -69,6 +70,54 @@ public class GrpcMessageReceiver implements MessageReceiver {
                 } else {
                     responseObserver.onNext(GrpcMessage.getDefaultInstance());
                 }
+                responseObserver.onCompleted();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                responseObserver.onError(e);
+            }
+        }
+
+        @Override
+        public void streamMessage(GrpcMessage request, StreamObserver<GrpcMessage> responseObserver) {
+            try {
+                Message javaMessage = GrpcMapper.toJava(request);
+
+                if (handler != null && javaMessage != null) {
+                    Message javaResponse = handler.handle(javaMessage, Protocol.GRPC);
+
+                    if (javaResponse instanceof ApplicationResponse appRes && appRes.message().startsWith("STREAM_PAYLOAD:")) {
+                        
+                        String payload = appRes.message().replace("STREAM_PAYLOAD:", "");
+                        
+                        if (!payload.isEmpty()) {
+                            String[] activeNodes = payload.split(",");
+
+                            for (String nodeId : activeNodes) {
+                                
+                                ApplicationResponse part = new ApplicationResponse(
+                                        appRes.messageId(),
+                                        appRes.senderId(),
+                                        appRes.targetId(),
+                                        appRes.originId(),
+                                        true,
+                                        nodeId
+                                );
+                                
+                                responseObserver.onNext(GrpcMapper.toGrpc(part));
+                            }
+                        }
+                    } 
+
+                    else if (javaResponse != null) {
+                        responseObserver.onNext(GrpcMapper.toGrpc(javaResponse));
+                    } else {
+                        responseObserver.onNext(GrpcMessage.getDefaultInstance());
+                    }
+                } else {
+                    responseObserver.onNext(GrpcMessage.getDefaultInstance());
+                }
+                
                 responseObserver.onCompleted();
 
             } catch (Exception e) {
